@@ -10,6 +10,7 @@
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclpy</depend>
+  <depend>gcr_obj_detect</depend>
   
   <export>
     <build_type>ament_cmake</build_type>
