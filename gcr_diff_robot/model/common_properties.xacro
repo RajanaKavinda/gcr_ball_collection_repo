@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:property name="effort" value="10.0" />
+    <xacro:property name="velocity" value="5.0" />
+
+    <!-- =========== Inertia Calculation for Box =========== -->
+    <xacro:macro name="box_intertia" params="m l w h xyz rpy">
+        <inertial>
+            <origin rpy="${rpy}" xyz="${xyz}"/>
+            <mass value="${m}"/>
+            <inertia 
+                ixx="${(1 / 12) * m * (l * l + h * h)}"
+                ixy="0" 
+                ixz="0"
+                iyy="${(1 / 12) * m * (w * w + l * l)}"
+                iyz="0"
+                izz="${(1 / 12) * m * (w * w + h * h)}"/>
+        </inertial>
+    </xacro:macro>
+    
+</robot>
+
+
+

@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- Body Link Properties -->
+    <gazebo reference="body_link">
+        <material>Gazebo/Green</material>
+        <mu1>0.2</mu1>
+        <mu2>0.2</mu2>
+    </gazebo>
+
+
+    <!-- Visual Model Link Properties -->
+    <gazebo reference="visual_model_link">
+        <material>Gazebo/OrangeTransparent</material>
+    </gazebo>
+
+
+    <!-- Heavy Link Properties -->
+    <gazebo reference="heavy_link">
+        <material>Gazebo/Blue</material>
+        <mu1>0.2</mu1>
+        <mu2>0.2</mu2>
+    </gazebo>
+
+
+    <!-- Wheel 1 Link Properties -->
+    <gazebo reference="wheel1_link">
+        <material>Gazebo/Runway</material>
+        <mu1>2.0</mu1>
+        <mu2>2.0</mu2>
+    </gazebo>
+
+
+    <!-- Wheel 2 Link Properties -->
+    <gazebo reference="wheel2_link">
+        <material>Gazebo/Runway</material>
+        <mu1>2.0</mu1>
+        <mu2>2.0</mu2>
+    </gazebo>
+
+
+    <!-- Caster Wheel Link Properties -->
+    <gazebo reference="caster_wheel_link">
+        <material>Gazebo/Indigo</material>
+        <mu1>0.2</mu1>
+        <mu2>0.2</mu2>
+    </gazebo>
+
+    <!-- Controller for Differential Drive Robot -->
+    <gazebo>
+        <plugin name="diff_drive_plugin" filename="libgazebo_ros_diff_drive.so">
+            <ros>
+                <!-- Namespace for the plugin (leave empty for default) -->
+                <namespace></namespace>
+            </ros>
+
+            <!-- Joint Names for Left and Right Wheels -->
+            <left_joint>wheel2_joint</left_joint>
+            <right_joint>wheel1_joint</right_joint>
+
+            <!-- Kinematic Parameters -->
+            <wheel_separation>${body_link_y_dim}</wheel_separation>
+            <wheel_diameter>${2*wheel_link_radius}</wheel_diameter>
+
+            <!-- Torque and Acceleration Limits -->
+            <max_wheel_torque>1000</max_wheel_torque>
+            <max_wheel_acceleration>5.0</max_wheel_acceleration>
+
+            <!-- Output Configuration -->
+            <publish_odom>true</publish_odom>
+            <publish_odom_tf>true</publish_odom_tf>
+            <publish_wheel_tf>true</publish_wheel_tf>
+
+            <!-- Frame Names -->
+            <odometry_frame>odom</odometry_frame>
+            <robot_base_frame>dummy_link</robot_base_frame>
+        </plugin>
+    </gazebo>
+
+</robot>

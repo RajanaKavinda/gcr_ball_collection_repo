@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <link name="ball_collector_link">
+        <visual>
+            <origin xyz="0.08 -0.114 0.38" rpy="0 -${pi_const} 0" />
+            <geometry>
+                <mesh filename="file://$(find gcr_diff_robot)/meshes/ball_collector.STL" scale="0.001 0.001 0.001"/>
+            </geometry>
+            <material name="blue">
+                <color rgba="0 0 .8 1"/>
+            </material>
+        </visual>
+
+        <collision name="ball_collector_collision">
+            <origin xyz="0.08 -0.114 0.38" rpy="0 -${pi_const} 0" />
+            <geometry>
+                <mesh filename="file://$(find gcr_diff_robot)/meshes/ball_collector.STL" scale="0.001 0.001 0.001"/>
+            </geometry>
+        </collision>
+
+        <inertial>
+            <origin xyz="0 0 0.14" rpy="0 0 0" />
+            <mass value="0.6"/>
+             <inertia ixx="0.002" ixy="0.0" ixz="0.0" iyy="0.002" iyz="0.0" izz="0.003"/>
+        </inertial>
+
+    </link>
+
+    <joint name="ball_collector_joint" type="revolute">
+        <parent link="body_link"/>
+        <child link="ball_collector_link" />
+        <origin xyz="0.355 0 0" rpy="0 0 0"/>
+        <axis xyz="0 1 0"/>
+        <limit lower="0" upper="${pi_const/2}" 
+               effort="${effort}" velocity="${velocity}"/>
+        <dynamics friction="0.05" damping="0.1" />
+    </joint>
+
+
+    <!-- Ball Collector Properties-->
+    <gazebo reference="ball_collector_link">
+        <material>Gazebo/Blue</material>
+        <mu1>0.2</mu1>
+        <mu2>0.2</mu2>
+        <sensor name="ball_collector_contact_sensor" type="contact">
+            <update_rate>50</update_rate>
+            <contact>
+                <collision>ball_collector_link_fixed_joint_lump__ball_collector_collision_collision</collision>
+            </contact>
+            <plugin name="contact_plugin" filename="libgazebo_ros_bumper.so">
+                <ros>
+                    <namespace>gcr</namespace>
+                    <remapping>bumper_states:=contact_sensor_topic</remapping>
+                </ros>
+                <frame_name>ball_collector_link</frame_name>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+
+</robot>
+
+

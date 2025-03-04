@@ -1,0 +1,40 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 50 # Hz
+
+    camera_joint_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    ball_collector_joint_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+camera_joint_controller:
+  ros__parameters:
+    joints:
+      - camera_joint
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+
+    open_loop_control: true
+    allow_integration_in_goal_trajectories: true
+
+ball_collector_joint_controller:
+  ros__parameters:
+    joints:
+      - ball_collector_joint
+
+    command_interfaces:
+      - position
+
+    state_interfaces:
+      - position
+
+    open_loop_control: true
+    allow_integration_in_goal_trajectories: true

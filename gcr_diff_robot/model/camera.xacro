@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!--Camera Properties-->
+    <xacro:property name="camera_length" value = "0.02"/>
+    <xacro:property name="camera_width" value = "0.03"/>
+    <xacro:property name="camera_height" value = "0.03"/>
+
+
+
+    <!-- Camera of Robot & Joint -->
+    <link name="camera_link">
+        <visual>
+            <geometry>
+                <box size="${camera_length} ${camera_width} ${camera_height}"/>
+            </geometry>
+        </visual>
+
+        <collision>
+            <geometry>
+                <box size="${camera_length} ${camera_width} ${camera_height}"/>
+            </geometry>
+        </collision>
+
+        <xacro:box_intertia m="0.01"  l="${camera_length}" w="${camera_width}" h="${camera_height}"
+                            xyz = "0 0 0" rpy="0 0 0" />
+    </link>
+
+
+    <joint name ="camera_joint" type="revolute">
+        <parent link="body_link"/>
+        <child link = "camera_link"/>
+        <origin xyz="0.3 0 0.56" rpy="0 0 0"/>
+        <axis xyz="0 1 0"/>
+        <limit lower="-${pi_const/ 2}" upper="${pi_const / 2}" 
+               effort="${effort}" velocity="${velocity}"/>
+        <dynamics friction="0.05" damping="0.1" />
+    </joint>
+
+    <!-- <transmission name="transmission_camera_joint">
+        <plugin>transmission_interface/SimpleTransmission</plugin>
+        <actuator name="motor_body_camera_joint" role="actuator1" />
+        <joint name="camera_joint" role="joint1">
+            <mechanical_reduction>1.0</mechanical_reduction>
+        </joint>
+    </transmission> -->
+
+    <!-- Camera Sensor  Gazebo-->
+
+    <gazebo reference="camera_link">
+        <material>Gazebo/Green</material>
+        <sensor type="camera" name="camera_sensor">
+            <pose>0 0 0 0 0 0</pose>
+            <visualize>true</visualize>
+            <update_rate>30</update_rate>
+            <camera>
+                <horizontal_fov>1.57</horizontal_fov>
+                <image>
+                    <width>640</width>
+                    <height>480</height>
+                    <format>R8G8B8</format>
+                </image>
+            </camera>
+            <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+                <imageTopicName>image_raw</imageTopicName>
+                <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+                <frameName>camera_link</frameName>
+            </plugin>
+        </sensor>
+    </gazebo>
+
+    <!-- Gazebo ros2_control plugin -->
+    <gazebo>
+      <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+        <robot_param>robot_description</robot_param>
+        <robot_param_node>robot_state_publisher</robot_param_node>
+        <parameters>$(find gcr_controller)/config/gcr_controllers.yaml</parameters>
+      </plugin>
+    </gazebo>
+
+</robot>
+
+
