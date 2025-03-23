@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+###########################################################################################
 
 # ROS Specific Imports
 import rclpy
@@ -11,7 +12,6 @@ from cv_bridge import CvBridge
 # General Python Imports
 import numpy as np
 import cv2
-import time
 
 # Custom Imports
 from deep_sort.deep_sort import DeepSort
@@ -31,7 +31,7 @@ class BallCollectionNode(Node):
 
         # Load DeepSORT and YOLO models
         deep_sort_weights = '/home/rajana/gazebo_ws/src/gcr_ball_collection/src/deep_sort/deep/checkpoint/ckpt.t7'
-        self.tracker = DeepSort(model_path=deep_sort_weights, max_age=50, max_iou_distance=0.7, n_init=6)
+        self.tracker = DeepSort(model_path=deep_sort_weights, max_age=80, max_iou_distance=0.6, n_init=3)
 
         # Motor control variables
         self.x_tolerance = 10    # Tolerance range for centered tracking
@@ -42,7 +42,7 @@ class BallCollectionNode(Node):
         
         # Track disappearance counters
         self.golfball_diappeared_counter = 0
-        self.golfball_diappeared_t = 50
+        self.golfball_diappeared_t = 100
 
         # Track disappearance counters
         self.selected_track_id = None
@@ -52,7 +52,7 @@ class BallCollectionNode(Node):
         self.latest_image_msg = None    # Store the latest rgb image message
 
         # Object Detection data from YOLO Subscriber
-        self.yolo_sub = self.create_subscription(YoloDetectionArray, '/golfball', self.yolo_callback, 2)
+        self.yolo_sub = self.create_subscription(YoloDetectionArray, '/golfball', self.yolo_callback, 10)
 
         # cmd_vel Publisher
         self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
@@ -83,66 +83,58 @@ class BallCollectionNode(Node):
 
     # Track the object and follow it
     def track_object_and_follow(self, tracks, frame):
+
         self.get_logger().info(f"Length of tracks: {len(tracks)}")
-        if len(tracks) == 0:
+
+        for track in tracks:
+            track_id = int(track[4])
+            x1, y1, x2, y2 = track[:4]
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 1)
+            cv2.putText(frame, f"ID-{track_id}", (int(x1), int(y1) - 5), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1)
+
+        track_id_available = any(self.selected_track_id == int(track[4]) for track in tracks)
+        selected_track = next((track for track in tracks if self.selected_track_id == int(track[4])), None)
+
+        if not track_id_available:
             self.golfball_diappeared_counter += 1
+            self.move_robot(0.25, 0.0)
         if self.golfball_diappeared_counter > self.golfball_diappeared_t:
             self.golfball_diappeared_counter = 0
             self.get_logger().info("Golfball disappeared. Resetting Ball Collection mode.")
             self.reset_ball_collection("Ball Collection was reset due to golfball disappearance. Press stop and select the golfball again.")
             return 
-        for track in tracks:
-            track_id = int(track[4])
-            x1, y1, x2, y2 = track[:4]
-            if self.selected_track_id == track_id:
-                cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 1)
-                cv2.putText(frame, f"ID-{self.selected_track_id}", (int(x1), int(y1) - 5), 
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1)
-                self.follow_golfball(track, frame)
-
+        if selected_track is not None:
+            # cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 1)
+            # cv2.putText(frame, f"ID-{self.selected_track_id}", (int(x1), int(y1) - 5), 
+            #             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1)
+            self.follow_golfball(selected_track)       
 
     # Motor Velocity Control for Ball Collection Mode
-    def follow_golfball(self, track, frame):
+    def follow_golfball(self, track):
         x1, y1, x2, y2 = track[:4]
         bbox_center_x = (x1 + x2) / 2
         x_deviation = bbox_center_x - 320  #  -320 <= x_deviation <= 320
         y = 480 - y2 # 0 <= y <= 480
 
         # Calculate linear and angular velocities
-        linear_x = y / 800 + 0.04
-        angular_z = x_deviation / 320
+        linear_x = y / 800 + 0.3
+        angular_z = x_deviation / 300
         
-        # #^# NEED TO ADD A TRAPEZOIDAL VELOCITY PROFILE FOR SMOOTH ACCELERATION AND DECELERATION
         if abs(y) < self.y_tolerance:
             if abs(x_deviation) > self.x_tolerance:
-                adjusted_msg = Twist()
-                adjusted_msg.linear.x = 0.0
-                adjusted_msg.angular.z = -angular_z 
-                self.cmd_vel_pub.publish(adjusted_msg)
+                self.move_robot(0.0, -angular_z)
             else:
-                adjusted_msg = Twist()
-                adjusted_msg.linear.x = linear_x
-                adjusted_msg.angular.z = 0.0
-                self.cmd_vel_pub.publish(adjusted_msg)
-            self.get_logger().info(f"Command published: Linear={adjusted_msg.linear.x }, Angular={adjusted_msg.angular.z}")
-                
-        
+                self.move_robot(linear_x, 0.0) 
         else:
-            adjusted_msg = Twist()
-            adjusted_msg.linear.x = linear_x
-            adjusted_msg.angular.z = -angular_z 
-            self.cmd_vel_pub.publish(adjusted_msg)
-            self.get_logger().info(f"Command published: Linear={adjusted_msg.linear.x }, Angular={adjusted_msg.angular.z}")
+            self.move_robot(linear_x, -angular_z)
 
-
-    # Stop the robot
-    def stop(self):
-        stop_msg = Twist()
-        stop_msg.linear.x = 0.0
-        stop_msg.angular.z = 0.0
-        self.cmd_vel_pub.publish(stop_msg)
-        self.get_logger().info('Command published: Linear=0, Angular=0')
-
+    def move_robot(self, linear_x, angular_z):
+        adjusted_msg = Twist()
+        adjusted_msg.linear.x = linear_x
+        adjusted_msg.angular.z = angular_z
+        self.cmd_vel_pub.publish(adjusted_msg)
+        self.get_logger().info(f"Command published: Linear={adjusted_msg.linear.x }, Angular={adjusted_msg.angular.z}")
 
     # Execute Ball Collection mode
     def execute_ball_collection(self, xywh_data, conf_data, frame):
@@ -150,7 +142,7 @@ class BallCollectionNode(Node):
             self.get_logger().error("No valid image frame available for processing.")
             return
         tracks = self.tracker.update(xywh_data, conf_data, frame)
-            
+        # print(tracks)
         if self.selected_track_id is None:
             self.ball_selection(tracks)
         else:
@@ -202,7 +194,7 @@ class BallCollectionNode(Node):
 
     # Reset Ball Collection mode
     def reset_ball_collection(self, reset_msg):
-        self.stop()
+        self.move_robot(0.0,0.0)
         self.xywh_array = np.empty((0, 4), dtype=np.float32)  
         self.conf_array = np.empty((0,), dtype=np.float32)  
         self.selected_track_id = None
@@ -238,3 +230,4 @@ if __name__ == '__main__':
     main()
 
 
+###########################################################################################

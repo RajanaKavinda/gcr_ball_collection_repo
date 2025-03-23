@@ -13,6 +13,7 @@ find_package(gcr_obj_detect)
 install(
   PROGRAMS 
     src/ball_collection_node.py
+    src/ball_collection_bot_sort_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 install(
