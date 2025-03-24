@@ -17,7 +17,7 @@ install(
   DESTINATION lib/${PROJECT_NAME}
 )
 install(
-  DIRECTORY src
+  DIRECTORY src config
   DESTINATION share/${PROJECT_NAME}
 )
 

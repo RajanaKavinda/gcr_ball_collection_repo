@@ -136,6 +136,23 @@ class BallCollectionNode(Node):
         self.cmd_vel_pub.publish(adjusted_msg)
         self.get_logger().info(f"Command published: Linear={adjusted_msg.linear.x }, Angular={adjusted_msg.angular.z}")
 
+    # # Execute Ball Collection mode
+    # def execute_ball_collection(self, xywh_data, conf_data, frame):
+    #     if frame is None:
+    #         self.get_logger().error("No valid image frame available for processing.")
+    #         return
+    #     tracks = self.tracker.update(xywh_data, conf_data, frame)
+
+    #     for track in tracks:
+    #         track_id = int(track[4])
+    #         x1, y1, x2, y2 = track[:4]
+    #         cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 1)
+    #         cv2.putText(frame, f"ID-{track_id}", (int(x1), int(y1) - 5), 
+    #                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1)
+    #     cv2.imshow("Ball Collection", frame)
+    #     if cv2.waitKey(1) & 0xFF == ord('q'):
+    #         cv2.destroyWindow("Ball Collection")
+
     # Execute Ball Collection mode
     def execute_ball_collection(self, xywh_data, conf_data, frame):
         if frame is None:
@@ -150,7 +167,6 @@ class BallCollectionNode(Node):
             cv2.imshow("Ball Collection", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             cv2.destroyWindow("Ball Collection")
-
 
     # Convert YOLO detection data to numpy arrays if Ball Collection mode is active
     def yolo_callback(self, msg):   
