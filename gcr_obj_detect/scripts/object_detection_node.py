@@ -29,7 +29,7 @@ class ObjectDetectionNode(Node):
         self.bridge = CvBridge()
         
         # Confidence threshold
-        self.confidence_threshold = 0.5
+        self.confidence_threshold = 0.4
         
         # Subscribe to the undistorted image topic
         self.image_subscriber = self.create_subscription(
